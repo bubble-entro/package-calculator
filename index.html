@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partner Node Worthiness Calculator</title>
+    <style>
+        :root {
+            --ink: #172126;
+            --muted: #5b6770;
+            --surface: #fffdf7;
+            --surface-2: #f4efe3;
+            --surface-3: #ffffff;
+            --line: rgba(23, 33, 38, 0.12);
+            --blue: #0f6cbd;
+            --green: #1d7f49;
+            --gold: #ab7a12;
+            --red: #b73a3a;
+            --amber: #925d08;
+            --shadow: 0 18px 60px rgba(23, 33, 38, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Avenir Next", "Sarabun", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(15, 108, 189, 0.12), transparent 28%),
+                radial-gradient(circle at top right, rgba(171, 122, 18, 0.12), transparent 24%),
+                linear-gradient(180deg, #fbf7ee 0%, #f3f7fb 100%);
+            padding: 28px;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.86);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .hero {
+            padding: 34px 34px 26px;
+            border-bottom: 1px solid var(--line);
+            background:
+                linear-gradient(135deg, rgba(15, 108, 189, 0.08), transparent 55%),
+                linear-gradient(225deg, rgba(171, 122, 18, 0.08), transparent 48%),
+                var(--surface);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(23, 33, 38, 0.06);
+            color: var(--muted);
+            font-size: 12px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 16px 0 10px;
+            font-size: clamp(2rem, 4vw, 3.35rem);
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 840px;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.65;
+        }
+
+        .hero-grid,
+        .controls,
+        .summary-grid,
+        .results-grid,
+        .assumption-grid,
+        .preset-grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .hero-grid {
+            grid-template-columns: 1.15fr 0.85fr;
+            align-items: end;
+            gap: 28px;
+        }
+
+        .hero-stat,
+        .preset-panel,
+        .assumption-card,
+        .summary-card,
+        .tier-card,
+        .comparison-shell {
+            border: 1px solid var(--line);
+            background: var(--surface-3);
+            border-radius: 22px;
+        }
+
+        .hero-stat {
+            display: grid;
+            gap: 10px;
+            padding: 18px;
+        }
+
+        .hero-stat span,
+        .summary-card span,
+        .assumption-card span {
+            color: var(--muted);
+            font-size: 12px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .hero-stat strong {
+            font-size: clamp(1.8rem, 2.6vw, 2.6rem);
+            line-height: 1;
+        }
+
+        .hero-stat p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--muted);
+        }
+
+        .section {
+            padding: 26px 34px 34px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: end;
+            margin-bottom: 18px;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: -0.02em;
+        }
+
+        .helper-text,
+        .section-header p,
+        .formula-text,
+        .tier-copy,
+        .footnote,
+        .tier-note {
+            color: var(--muted);
+        }
+
+        .controls {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            padding: 18px;
+            border-radius: 24px;
+            background: var(--surface-2);
+            border: 1px solid rgba(23, 33, 38, 0.08);
+        }
+
+        .form-control {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: 0.01em;
+        }
+
+        input,
+        select,
+        button {
+            font: inherit;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(23, 33, 38, 0.14);
+            background: rgba(255, 255, 255, 0.96);
+            color: var(--ink);
+        }
+
+        .helper-text {
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .preset-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-top: 18px;
+        }
+
+        .preset-panel {
+            padding: 18px;
+        }
+
+        .preset-panel h3,
+        .tier-card h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+        }
+
+        .preset-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .preset-button {
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(23, 33, 38, 0.12);
+            background: #fff;
+            color: var(--ink);
+            cursor: pointer;
+        }
+
+        .preset-button:hover,
+        .preset-button:focus-visible {
+            border-color: rgba(15, 108, 189, 0.4);
+            outline: none;
+        }
+
+        .assumption-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-top: 18px;
+        }
+
+        .assumption-card,
+        .summary-card {
+            padding: 16px;
+        }
+
+        .assumption-card strong,
+        .summary-card strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 18px;
+            line-height: 1.25;
+        }
+
+        .summary-grid {
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            margin-top: 20px;
+        }
+
+        .summary-card small {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+        .results-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            margin-top: 20px;
+        }
+
+        .tier-card {
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .tier-card.selected {
+            border-color: rgba(15, 108, 189, 0.35);
+            box-shadow: 0 14px 32px rgba(15, 108, 189, 0.1);
+            background: linear-gradient(180deg, rgba(15, 108, 189, 0.03), #fff 26%);
+        }
+
+        .tier-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .tier-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .badge-basic { background: rgba(59, 109, 17, 0.12); color: #3b6d11; }
+        .badge-business { background: rgba(15, 108, 189, 0.12); color: var(--blue); }
+        .badge-enterprise { background: rgba(171, 122, 18, 0.14); color: var(--gold); }
+
+        .tier-copy {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .metric-list {
+            display: grid;
+            gap: 10px;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: start;
+            font-size: 14px;
+        }
+
+        .metric span {
+            color: var(--muted);
+        }
+
+        .metric strong {
+            text-align: right;
+        }
+
+        .status-box {
+            border-radius: 18px;
+            padding: 14px 16px;
+            font-weight: 700;
+            line-height: 1.5;
+        }
+
+        .status-positive {
+            background: rgba(29, 127, 73, 0.12);
+            color: var(--green);
+        }
+
+        .status-negative {
+            background: rgba(183, 58, 58, 0.12);
+            color: var(--red);
+        }
+
+        .status-caution {
+            background: rgba(146, 93, 8, 0.12);
+            color: var(--amber);
+        }
+
+        .tier-notes {
+            margin: 0;
+            padding-left: 18px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .comparison-shell {
+            padding: 18px;
+            margin-top: 22px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 860px;
+        }
+
+        th,
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .metric-row-title {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .table-positive { color: var(--green); font-weight: 700; }
+        .table-negative { color: var(--red); font-weight: 700; }
+        .table-caution { color: var(--amber); font-weight: 700; }
+
+        .footnote {
+            margin-top: 16px;
+            font-size: 12px;
+            line-height: 1.65;
+        }
+
+        @media (max-width: 1180px) {
+            .hero-grid,
+            .controls,
+            .summary-grid,
+            .results-grid,
+            .assumption-grid,
+            .preset-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            body { padding: 16px; }
+
+            .hero,
+            .section {
+                padding: 22px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: start;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <section class="hero">
+        <div class="hero-grid">
+            <div>
+                <div class="eyebrow">3 partner tiers • access vs node tiers • dynamic carbon accounting</div>
+                <h1>Partner Node Worthiness Calculator</h1>
+                <p>
+                    Estimate whether joining the network is worth it under the three approved partner packages. Tier 1 remains access-only with no node deployment, while Tiers 2 and 3 compute validator yield directly from chain throughput, gas capacity, and the base operation fee. Users pay a total gas price of OP × (1 + SCR%), validators earn only from the OP component, and the SCR surcharge is routed to the automated Carbon Fund.
+                </p>
+            </div>
+            <div class="hero-stat">
+                <span>Selected Package Verdict</span>
+                <strong id="selectedVerdictHeadline">Worth checking</strong>
+                <div class="formula-text" id="formulaText">Users pay OP × (1 + SCR%)</div>
+                <p id="selectedVerdictDetail">Set your package, throughput, blocktime, validator count, and operation fee to see whether OP-only validator yield clears the tier's cost base after carbon liability.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <div>
+                <h2>Manual Inputs</h2>
+                <p class="helper-text">
+                    Enter the scenario you want to test. The calculator derives network gas usage from transactions, blocktime, and block gas capacity, then auto-calculates the SCR surcharge from validator count and block interval.
+                </p>
+            </div>
+            <div class="helper-text">Tier costs stay anchored to the sourced partner-node package prices, while validator revenue is limited to the OP stream only.</div>
+        </div>
+
+        <div class="controls" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
+            <div class="form-control">
+                <label for="blockTime">Blocktime (seconds)</label>
+                <input type="number" id="blockTime" value="5" min="1" step="1">
+            </div>
+            <div class="form-control">
+                <label for="txnsPerMonth">Transactions per month</label>
+                <input type="number" id="txnsPerMonth" value="30747600" min="0" step="1">
+            </div>
+            <div class="form-control">
+                <label for="validatorCount">Validator count</label>
+                <input type="number" id="validatorCount" value="16" min="1" step="1">
+            </div>
+            <div class="form-control">
+                <label for="selectedPackage">Package type</label>
+                <select id="selectedPackage">
+                    <option value="tier1">Tier 1 • Network Access</option>
+                    <option value="tier2" selected>Tier 2 • Business Validator</option>
+                    <option value="tier3">Tier 3 • Enterprise Archive</option>
+                </select>
+            </div>
+            <div class="form-control">
+                <label for="operationFee">Operation fee OP (Gwei)</label>
+                <input type="number" id="operationFee" value="100" min="0" step="0.001">
+            </div>
+            <div class="form-control">
+                <label for="scrPercent">SCR (% of OP)</label>
+                <input type="number" id="scrPercent" value="0.003333" min="0" step="0.000001" readonly style="background-color: rgba(23,33,38,0.05); cursor: not-allowed;">
+                <div class="helper-text">Auto-derived from validator count and blocktime. Validators do not receive this surcharge; it flows to the Carbon Fund.</div>
+            </div>
+        </div>
+
+        <div class="preset-grid">
+            <div class="preset-panel">
+                <h3>Scenario presets</h3>
+                <div class="preset-row">
+                    <button class="preset-button" type="button" data-operation-fee="25">OP 25 Gwei</button>
+                    <button class="preset-button" type="button" data-operation-fee="50">OP 50 Gwei</button>
+                    <button class="preset-button" type="button" data-operation-fee="100">OP 100 Gwei</button>
+                    <button class="preset-button" type="button" data-benchmark-usage="7.8">Load 7.80%</button>
+                    <button class="preset-button" type="button" data-benchmark-usage="14.43">Load 14.43%</button>
+                    <button class="preset-button" type="button" data-validator-count="5">5 validators</button>
+                    <button class="preset-button" type="button" data-validator-count="8">8 validators</button>
+                    <button class="preset-button" type="button" data-validator-count="16">16 validators</button>
+                    <button class="preset-button" type="button" data-validator-count="32">32 validators</button>
+                </div>
+            </div>
+
+            <div class="preset-panel">
+                <h3>Tier 1 access management</h3>
+                <div class="controls" style="grid-template-columns: repeat(1, minmax(0, 1fr)); padding: 0; background: transparent; border: none; gap: 12px;">
+                    <div class="form-control">
+                        <label for="tier1ManagedThb">Tier 1 managed access</label>
+                        <select id="tier1ManagedThb">
+                            <option value="0" selected>THB 0 / month</option>
+                            <option value="500">THB 500 / month</option>
+                            <option value="1000">THB 1,000 / month</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="assumption-grid">
+            <div class="assumption-card">
+                <span>Validator Count</span>
+                <strong id="assumptionValidatorCount">16 validators</strong>
+                <div class="helper-text">The total OP revenue pool is divided evenly across the active validators you enter.</div>
+            </div>
+            <div class="assumption-card">
+                <span>Gas Limit</span>
+                <strong>30,000,000 gas</strong>
+                <div class="helper-text">Anchored to the workspace genesis configuration used by the current chain setup.</div>
+            </div>
+            <div class="assumption-card">
+                <span>Average Gas / Txn</span>
+                <strong>40,000 gas</strong>
+                <div class="helper-text">A practical midpoint from the report's simple loyalty examples around 37,257 and 40,328 gas.</div>
+            </div>
+            <div class="assumption-card">
+                <span>Base-Power Carbon Penalty</span>
+                <strong id="assumptionBasePower">68.962 NXN / validator-year</strong>
+                <div class="helper-text" id="assumptionBasePowerNote">Deducted from validator returns (1 NXN = 12.384 THB).</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <div>
+                <h2>Worthiness View</h2>
+                <p class="helper-text">
+                    Revenue is derived bottom-up from requested throughput, block gas capacity, and the base OP fee. If requested volume exceeds chain capacity, gas usage is capped at 100% of block gas, while the SCR surcharge remains isolated in the Carbon Fund and outside validator payout.
+                </p>
+            </div>
+            <div class="helper-text" id="scenarioSummary">Scenario Summary Updating...</div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <span>Total Gas Price</span>
+                <strong id="summaryGasPrice">-</strong>
+                <small id="summaryCarbonFee">-</small>
+            </div>
+            <div class="summary-card">
+                <span>Estimated Gas Used / Block</span>
+                <strong id="summaryUsagePct">-</strong>
+                <small id="summaryUsageNote">-</small>
+            </div>
+            <div class="summary-card">
+                <span>Monthly Capacity</span>
+                <strong id="summaryCapacity">-</strong>
+                <small id="summaryCapacityNote">-</small>
+            </div>
+            <div class="summary-card">
+                <span>Selected Tier Gross Revenue</span>
+                <strong id="summaryAnnualRevenue">-</strong>
+                <small id="summaryMonthlyRevenue">-</small>
+            </div>
+            <div class="summary-card">
+                <span>Validator Share Model</span>
+                <strong id="summaryValidatorCount">-</strong>
+                <small id="summaryValidatorShare">-</small>
+            </div>
+            <div class="summary-card">
+                <span>Annual Carbon Fund</span>
+                <strong id="summaryCarbonFund">-</strong>
+                <small id="summaryCarbonFundNote">-</small>
+            </div>
+        </div>
+
+        <div class="results-grid">
+            <article class="tier-card" id="tier1Card">
+                <div class="tier-top">
+                    <div>
+                        <div class="tier-badge badge-basic">Tier 1</div>
+                        <h3>Network Access</h3>
+                    </div>
+                    <div class="formula-text">Access only</div>
+                </div>
+                <p class="tier-copy">Participant onboarding without node deployment. This package provides network access but creates no validator revenue stream.</p>
+                <div class="metric-list">
+                    <div class="metric"><span>Annual gross revenue</span><strong id="tier1GrossRevenue">-</strong></div>
+                    <div class="metric"><span>Annual carbon liability</span><strong id="tier1CarbonLiability">-</strong></div>
+                    <div class="metric"><span>First-year cost base</span><strong id="tier1FirstYearCost">-</strong></div>
+                    <div class="metric"><span>First-year net return</span><strong id="tier1FirstYearNet">-</strong></div>
+                    <div class="metric"><span>Recurring annual cost</span><strong id="tier1RecurringCost">-</strong></div>
+                    <div class="metric"><span>Recurring net return</span><strong id="tier1RecurringNet">-</strong></div>
+                    <div class="metric"><span>Recurring ROI</span><strong id="tier1RecurringRoi">-</strong></div>
+                </div>
+                <div class="status-box status-caution" id="tier1Status">-</div>
+                <p class="tier-note" id="tier1Note">-</p>
+            </article>
+
+            <article class="tier-card selected" id="tier2Card">
+                <div class="tier-top">
+                    <div>
+                        <div class="tier-badge badge-business">Tier 2</div>
+                        <h3>Business Validator</h3>
+                    </div>
+                    <div class="formula-text">Validator + full history</div>
+                </div>
+                <p class="tier-copy">Dedicated validator economics with the sourced business-node package cost base. Gross yield is derived only from the OP revenue pool.</p>
+                <div class="metric-list">
+                    <div class="metric"><span>Annual gross revenue</span><strong id="tier2GrossRevenue">-</strong></div>
+                    <div class="metric"><span>Annual carbon liability</span><strong id="tier2CarbonLiability">-</strong></div>
+                    <div class="metric"><span>First-year cost base</span><strong id="tier2FirstYearCost">-</strong></div>
+                    <div class="metric"><span>First-year net return</span><strong id="tier2FirstYearNet">-</strong></div>
+                    <div class="metric"><span>Recurring annual cost</span><strong id="tier2RecurringCost">-</strong></div>
+                    <div class="metric"><span>Recurring net return</span><strong id="tier2RecurringNet">-</strong></div>
+                    <div class="metric"><span>Recurring ROI</span><strong id="tier2RecurringRoi">-</strong></div>
+                </div>
+                <div class="status-box status-caution" id="tier2Status">-</div>
+                <p class="tier-note" id="tier2Note">-</p>
+            </article>
+
+            <article class="tier-card" id="tier3Card">
+                <div class="tier-top">
+                    <div>
+                        <div class="tier-badge badge-enterprise">Tier 3</div>
+                        <h3>Enterprise Archive</h3>
+                    </div>
+                    <div class="formula-text">Archive + RPC depth</div>
+                </div>
+                <p class="tier-copy">Archive-grade infrastructure with the higher sourced package cost base. Validator yield still comes only from the OP stream, not from SCR surcharges.</p>
+                <div class="metric-list">
+                    <div class="metric"><span>Annual gross revenue</span><strong id="tier3GrossRevenue">-</strong></div>
+                    <div class="metric"><span>Annual carbon liability</span><strong id="tier3CarbonLiability">-</strong></div>
+                    <div class="metric"><span>First-year cost base</span><strong id="tier3FirstYearCost">-</strong></div>
+                    <div class="metric"><span>First-year net return</span><strong id="tier3FirstYearNet">-</strong></div>
+                    <div class="metric"><span>Recurring annual cost</span><strong id="tier3RecurringCost">-</strong></div>
+                    <div class="metric"><span>Recurring net return</span><strong id="tier3RecurringNet">-</strong></div>
+                    <div class="metric"><span>Recurring ROI</span><strong id="tier3RecurringRoi">-</strong></div>
+                </div>
+                <div class="status-box status-caution" id="tier3Status">-</div>
+                <p class="tier-note" id="tier3Note">-</p>
+            </article>
+        </div>
+
+        <div class="comparison-shell">
+            <table>
+                <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Tier 1</th>
+                    <th>Tier 2</th>
+                    <th>Tier 3</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="metric-row-title">Annual gross validator revenue</td>
+                    <td id="comparisonGrossTier1">-</td>
+                    <td id="comparisonGrossTier2">-</td>
+                    <td id="comparisonGrossTier3">-</td>
+                </tr>
+                <tr>
+                    <td class="metric-row-title">Annual Carbon Fund allocation</td>
+                    <td id="comparisonFundTier1">-</td>
+                    <td id="comparisonFundTier2">-</td>
+                    <td id="comparisonFundTier3">-</td>
+                </tr>
+                <tr>
+                    <td class="metric-row-title">Annual validator carbon liability</td>
+                    <td id="comparisonLiabilityTier1">-</td>
+                    <td id="comparisonLiabilityTier2">-</td>
+                    <td id="comparisonLiabilityTier3">-</td>
+                </tr>
+                <tr>
+                    <td class="metric-row-title">First-year cost base</td>
+                    <td id="comparisonFirstYearCostTier1">-</td>
+                    <td id="comparisonFirstYearCostTier2">-</td>
+                    <td id="comparisonFirstYearCostTier3">-</td>
+                </tr>
+                <tr>
+                    <td class="metric-row-title">Recurring annual cost</td>
+                    <td id="comparisonRecurringCostTier1">-</td>
+                    <td id="comparisonRecurringCostTier2">-</td>
+                    <td id="comparisonRecurringCostTier3">-</td>
+                </tr>
+                <tr>
+                    <td class="metric-row-title">First-year net return</td>
+                    <td id="comparisonFirstYearNetTier1">-</td>
+                    <td id="comparisonFirstYearNetTier2">-</td>
+                    <td id="comparisonFirstYearNetTier3">-</td>
+                </tr>
+                <tr>
+                    <td class="metric-row-title">Recurring net return</td>
+                    <td id="comparisonRecurringNetTier1">-</td>
+                    <td id="comparisonRecurringNetTier2">-</td>
+                    <td id="comparisonRecurringNetTier3">-</td>
+                </tr>
+                <tr>
+                    <td class="metric-row-title">Recurring ROI</td>
+                    <td id="comparisonRecurringRoiTier1">-</td>
+                    <td id="comparisonRecurringRoiTier2">-</td>
+                    <td id="comparisonRecurringRoiTier3">-</td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="footnote" id="comparisonFootnote">
+                Validator gross revenue is computed only from the OP pool. SCR-funded Carbon Fund flows are tracked separately and never enter validator ROI, while base-power carbon liability is charged directly to node-running tiers.
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const SECONDS_PER_YEAR = 31536000;
+    const MONTHS_PER_YEAR = 12;
+    const GAS_LIMIT_PER_BLOCK = 30000000;
+    const AVERAGE_GAS_PER_TRANSACTION = 40000;
+    const THB_PER_NXN = 12.384;
+    const NXN_PER_GWEI = 1e-9;
+    const BASE_POWER_PENALTY_NXN_PER_VALIDATOR_YEAR = 68.962;
+    const BASE_BLOCK_TIME_SECONDS = 5;
+    const BASE_CARBON_FEE_GWEI_PER_VALIDATOR_AT_FIVE_SECONDS = 0.003333 / 16;
+
+    const currencyFormatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "THB",
+        maximumFractionDigits: 0
+    });
+    const integerFormatter = new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0
+    });
+    const decimalFormatter = new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+
+    const tierDefinitions = {
+        tier1: {
+            badgeLabel: "Tier 1",
+            deploysValidator: false,
+            setupCostThb: 1500,
+            monthlyCostThb: 0
+        },
+        tier2: {
+            badgeLabel: "Tier 2",
+            deploysValidator: true,
+            setupCostThb: 12000,
+            monthlyCostThb: 13620
+        },
+        tier3: {
+            badgeLabel: "Tier 3",
+            deploysValidator: true,
+            setupCostThb: 12000,
+            monthlyCostThb: 15520
+        }
+    };
+
+    function byId(id) {
+        return document.getElementById(id);
+    }
+
+    const dom = {
+        blockTime: byId("blockTime"),
+        txnsPerMonth: byId("txnsPerMonth"),
+        validatorCount: byId("validatorCount"),
+        selectedPackage: byId("selectedPackage"),
+        operationFee: byId("operationFee"),
+        scrPercent: byId("scrPercent"),
+        tier1ManagedThb: byId("tier1ManagedThb"),
+        scenarioSummary: byId("scenarioSummary"),
+        selectedVerdictHeadline: byId("selectedVerdictHeadline"),
+        selectedVerdictDetail: byId("selectedVerdictDetail"),
+        formulaText: byId("formulaText"),
+        assumptionValidatorCount: byId("assumptionValidatorCount"),
+        assumptionBasePower: byId("assumptionBasePower"),
+        assumptionBasePowerNote: byId("assumptionBasePowerNote"),
+        summaryGasPrice: byId("summaryGasPrice"),
+        summaryCarbonFee: byId("summaryCarbonFee"),
+        summaryUsagePct: byId("summaryUsagePct"),
+        summaryUsageNote: byId("summaryUsageNote"),
+        summaryCapacity: byId("summaryCapacity"),
+        summaryCapacityNote: byId("summaryCapacityNote"),
+        summaryAnnualRevenue: byId("summaryAnnualRevenue"),
+        summaryMonthlyRevenue: byId("summaryMonthlyRevenue"),
+        summaryValidatorCount: byId("summaryValidatorCount"),
+        summaryValidatorShare: byId("summaryValidatorShare"),
+        summaryCarbonFund: byId("summaryCarbonFund"),
+        summaryCarbonFundNote: byId("summaryCarbonFundNote"),
+        comparisonFootnote: byId("comparisonFootnote")
+    };
+
+    function clamp(value, minimum, maximum) {
+        return Math.min(maximum, Math.max(minimum, value));
+    }
+
+    function readNumber(input, fallback) {
+        const value = Number.parseFloat(input.value);
+        return Number.isFinite(value) ? value : fallback;
+    }
+
+    function formatCurrency(value) {
+        return currencyFormatter.format(value);
+    }
+
+    function formatInteger(value) {
+        return integerFormatter.format(Math.round(value));
+    }
+
+    function formatDecimal(value, digits = 2) {
+        return Number(value).toLocaleString("en-US", {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+        });
+    }
+
+    function formatGwei(value) {
+        return `${formatDecimal(value, 6)} Gwei`;
+    }
+
+    function formatPercent(value, digits = 2) {
+        return `${formatDecimal(value, digits)}%`;
+    }
+
+    function formatRoi(value) {
+        if (value === null) {
+            return "N/A";
+        }
+
+        return formatPercent(value, 1);
+    }
+
+    function numericTone(value) {
+        if (value > 0) {
+            return "positive";
+        }
+
+        if (value < 0) {
+            return "negative";
+        }
+
+        return "caution";
+    }
+
+    function basePowerPenaltyNxnPerValidatorYear() {
+        return BASE_POWER_PENALTY_NXN_PER_VALIDATOR_YEAR;
+    }
+
+    function validatorCarbonLiabilityThb() {
+        return basePowerPenaltyNxnPerValidatorYear() * THB_PER_NXN;
+    }
+
+    function calculateCarbonFeeGwei(blockTimeSeconds, validatorCount) {
+        const timeScale = blockTimeSeconds / BASE_BLOCK_TIME_SECONDS;
+        return BASE_CARBON_FEE_GWEI_PER_VALIDATOR_AT_FIVE_SECONDS * validatorCount * timeScale;
+    }
+
+    function calculateUsageProfile(blockTimeSeconds, txnsPerMonth) {
+        const blocksPerYear = SECONDS_PER_YEAR / blockTimeSeconds;
+        const blocksPerMonth = blocksPerYear / MONTHS_PER_YEAR;
+        const monthlyCapacityGas = blocksPerMonth * GAS_LIMIT_PER_BLOCK;
+        const monthlyCapacityTxns = monthlyCapacityGas / AVERAGE_GAS_PER_TRANSACTION;
+        const requestedGasPerMonth = txnsPerMonth * AVERAGE_GAS_PER_TRANSACTION;
+        const requestedUsagePct = monthlyCapacityGas === 0 ? 0 : (requestedGasPerMonth / monthlyCapacityGas) * 100;
+        const effectiveUsagePct = clamp(requestedUsagePct, 0, 100);
+
+        return {
+            blocksPerYear,
+            monthlyCapacityGas,
+            monthlyCapacityTxns,
+            requestedUsagePct,
+            effectiveUsagePct
+        };
+    }
+
+    function calculateScenario(inputs) {
+        const usage = calculateUsageProfile(inputs.blockTimeSeconds, inputs.txnsPerMonth);
+        const carbonFeeGwei = calculateCarbonFeeGwei(inputs.blockTimeSeconds, inputs.validatorCount);
+        const scrPercent = inputs.operationFeeGwei > 0 ? (carbonFeeGwei / inputs.operationFeeGwei) * 100 : 0;
+        const totalNetworkGasConsumedPerYear = usage.blocksPerYear * GAS_LIMIT_PER_BLOCK * (usage.effectiveUsagePct / 100);
+        const totalPoolOperationRevenueGwei = totalNetworkGasConsumedPerYear * inputs.operationFeeGwei;
+        const totalPoolCarbonRevenueGwei = totalNetworkGasConsumedPerYear * carbonFeeGwei;
+        const totalPoolOperationRevenueNxn = totalPoolOperationRevenueGwei * NXN_PER_GWEI;
+        const totalPoolCarbonRevenueNxn = totalPoolCarbonRevenueGwei * NXN_PER_GWEI;
+        const totalPoolOperationRevenueThb = totalPoolOperationRevenueNxn * THB_PER_NXN;
+        const totalPoolCarbonRevenueThb = totalPoolCarbonRevenueNxn * THB_PER_NXN;
+        const annualRevenueThb = totalPoolOperationRevenueThb / inputs.validatorCount;
+
+        return {
+            ...usage,
+            ...inputs,
+            carbonFeeGwei,
+            scrPercent,
+            totalGasPriceGwei: inputs.operationFeeGwei + carbonFeeGwei,
+            totalNetworkGasConsumedPerYear,
+            totalPoolOperationRevenueGwei,
+            totalPoolOperationRevenueNxn,
+            totalPoolOperationRevenueThb,
+            totalPoolCarbonRevenueGwei,
+            totalPoolCarbonRevenueNxn,
+            totalPoolCarbonRevenueThb,
+            annualRevenueThb
+        };
+    }
+
+    function getTierDefinition(tierKey, tier1ManagedThb) {
+        if (tierKey === "tier1") {
+            return {
+                ...tierDefinitions.tier1,
+                monthlyCostThb: tier1ManagedThb
+            };
+        }
+
+        return tierDefinitions[tierKey];
+    }
+
+    function evaluateTierStatus(metrics) {
+        if (!metrics.deploysValidator) {
+            if (metrics.recurringCostThb === 0) {
+                return {
+                    tone: "caution",
+                    headline: "Access only",
+                    cardText: "No validator yield and no recurring fee.",
+                    detail: "This package grants access to the network, but it does not deploy validator infrastructure or earn OP revenue."
+                };
+            }
+
+            return {
+                tone: "caution",
+                headline: "Access only",
+                cardText: "Administrative cost with no validator yield.",
+                detail: "This package stays outside validator economics. Managed access changes the admin cost only, not the revenue side."
+            };
+        }
+
+        if (metrics.recurringNetReturnThb <= 0) {
+            return {
+                tone: "negative",
+                headline: "Below cost base",
+                cardText: "Recurring operation stays below break-even.",
+                detail: "After package costs and the validator's base-power carbon liability, recurring operations remain below zero."
+            };
+        }
+
+        if (metrics.firstYearNetReturnThb <= 0) {
+            return {
+                tone: "caution",
+                headline: "Payback after year one",
+                cardText: "Recurring return is positive after setup recovery.",
+                detail: "Recurring operations clear the ongoing cost base, but first-year setup keeps the opening year below break-even."
+            };
+        }
+
+        return {
+            tone: "positive",
+            headline: "Clears cost base",
+            cardText: "First-year and recurring return stay positive.",
+            detail: "Both first-year and recurring returns stay positive after subtracting package costs and validator carbon liability."
+        };
+    }
+
+    function buildTierMetrics(tierKey, scenario) {
+        const definition = getTierDefinition(tierKey, scenario.tier1ManagedThb);
+        const annualGrossRevenueThb = definition.deploysValidator ? scenario.annualRevenueThb : 0;
+        const annualCarbonLiabilityThb = definition.deploysValidator ? validatorCarbonLiabilityThb() : 0;
+        const firstYearCostThb = definition.setupCostThb + (definition.monthlyCostThb * MONTHS_PER_YEAR);
+        const recurringCostThb = definition.monthlyCostThb * MONTHS_PER_YEAR;
+        const firstYearNetReturnThb = annualGrossRevenueThb - firstYearCostThb - annualCarbonLiabilityThb;
+        const recurringNetReturnThb = annualGrossRevenueThb - recurringCostThb - annualCarbonLiabilityThb;
+        const monthlyNetReturnThb = recurringNetReturnThb / MONTHS_PER_YEAR;
+        const firstYearRoiPct = firstYearCostThb > 0 ? (firstYearNetReturnThb / firstYearCostThb) * 100 : null;
+        const recurringRoiPct = recurringCostThb > 0 ? (recurringNetReturnThb / recurringCostThb) * 100 : null;
+        const status = evaluateTierStatus({
+            deploysValidator: definition.deploysValidator,
+            firstYearNetReturnThb,
+            recurringNetReturnThb,
+            recurringCostThb
+        });
+
+        return {
+            ...definition,
+            tierKey,
+            annualGrossRevenueThb,
+            annualCarbonLiabilityThb,
+            firstYearCostThb,
+            recurringCostThb,
+            firstYearNetReturnThb,
+            recurringNetReturnThb,
+            monthlyNetReturnThb,
+            firstYearRoiPct,
+            recurringRoiPct,
+            status
+        };
+    }
+
+    function setText(element, value) {
+        element.textContent = value;
+    }
+
+    function setTierMetric(tierKey, suffix, text, tone) {
+        const element = byId(`${tierKey}${suffix}`);
+        element.textContent = text;
+        element.className = tone ? `table-${tone}` : "";
+    }
+
+    function setComparisonCell(rowKey, tierKey, text, tone) {
+        const suffix = `${tierKey.charAt(0).toUpperCase()}${tierKey.slice(1)}`;
+        const element = byId(`comparison${rowKey}${suffix}`);
+        element.textContent = text;
+        element.className = tone ? `table-${tone}` : "";
+    }
+
+    function updateSummary(scenario, selectedMetrics) {
+        setText(dom.summaryGasPrice, formatGwei(scenario.totalGasPriceGwei));
+        setText(dom.summaryCarbonFee, `Users pay ${formatGwei(scenario.operationFeeGwei)} OP + ${formatGwei(scenario.carbonFeeGwei)} carbon surcharge.`);
+        setText(dom.summaryUsagePct, formatPercent(scenario.effectiveUsagePct));
+        setText(dom.summaryUsageNote, scenario.requestedUsagePct > 100
+            ? `Requested ${formatPercent(scenario.requestedUsagePct)} and capped at chain capacity.`
+            : `Requested load stays within capacity at ${formatPercent(scenario.requestedUsagePct)}.`);
+        setText(dom.summaryCapacity, `${formatInteger(scenario.monthlyCapacityTxns)} txns / month`);
+        setText(dom.summaryCapacityNote, `Requested ${formatInteger(scenario.txnsPerMonth)} txns / month at ${integerFormatter.format(AVERAGE_GAS_PER_TRANSACTION)} gas per txn.`);
+        setText(dom.summaryAnnualRevenue, formatCurrency(selectedMetrics.annualGrossRevenueThb));
+        setText(dom.summaryMonthlyRevenue, `Gross monthly run-rate ${formatCurrency(selectedMetrics.annualGrossRevenueThb / MONTHS_PER_YEAR)} before costs and validator carbon liability.`);
+        setText(dom.summaryValidatorCount, `1 of ${formatInteger(scenario.validatorCount)} validators`);
+        setText(dom.summaryValidatorShare, `OP pool ${formatCurrency(scenario.totalPoolOperationRevenueThb)} / ${formatInteger(scenario.validatorCount)} validators.`);
+        setText(dom.summaryCarbonFund, formatCurrency(scenario.totalPoolCarbonRevenueThb));
+        setText(dom.summaryCarbonFundNote, `Funded only by the ${formatGwei(scenario.carbonFeeGwei)} SCR surcharge; excluded from validator payout.`);
+    }
+
+    function updateVerdict(scenario, selectedMetrics) {
+        setText(dom.selectedVerdictHeadline, selectedMetrics.status.headline);
+        setText(dom.formulaText, `Users pay OP × (1 + SCR%) = ${formatGwei(scenario.totalGasPriceGwei)}`);
+
+        if (!selectedMetrics.deploysValidator) {
+            setText(dom.selectedVerdictDetail, `${selectedMetrics.status.detail} Users still pay the total gas price, but this tier earns neither OP yield nor Carbon Fund proceeds.`);
+            return;
+        }
+
+        setText(dom.selectedVerdictDetail, `${selectedMetrics.status.detail} Validators receive only the ${formatGwei(scenario.operationFeeGwei)} OP component, while ${formatGwei(scenario.carbonFeeGwei)} is routed to the Carbon Fund.`);
+    }
+
+    function updateTierCard(tierKey, metrics, selectedTierKey) {
+        const card = byId(`${tierKey}Card`);
+        card.classList.toggle("selected", tierKey === selectedTierKey);
+
+        setTierMetric(tierKey, "GrossRevenue", formatCurrency(metrics.annualGrossRevenueThb));
+        setTierMetric(tierKey, "CarbonLiability", formatCurrency(metrics.annualCarbonLiabilityThb), metrics.annualCarbonLiabilityThb > 0 ? "caution" : null);
+        setTierMetric(tierKey, "FirstYearCost", formatCurrency(metrics.firstYearCostThb));
+        setTierMetric(tierKey, "FirstYearNet", formatCurrency(metrics.firstYearNetReturnThb), numericTone(metrics.firstYearNetReturnThb));
+        setTierMetric(tierKey, "RecurringCost", formatCurrency(metrics.recurringCostThb));
+        setTierMetric(tierKey, "RecurringNet", formatCurrency(metrics.recurringNetReturnThb), numericTone(metrics.recurringNetReturnThb));
+        setTierMetric(tierKey, "RecurringRoi", formatRoi(metrics.recurringRoiPct), metrics.recurringRoiPct === null ? null : numericTone(metrics.recurringRoiPct));
+
+        const statusElement = byId(`${tierKey}Status`);
+        statusElement.className = `status-box status-${metrics.status.tone}`;
+        statusElement.textContent = metrics.status.cardText;
+
+        const noteElement = byId(`${tierKey}Note`);
+        if (!metrics.deploysValidator) {
+            noteElement.textContent = `Monthly net return: ${formatCurrency(metrics.monthlyNetReturnThb)}. Managed access changes only the administrative cost layer.`;
+            return;
+        }
+
+        noteElement.textContent = `Monthly net return: ${formatCurrency(metrics.monthlyNetReturnThb)} after subtracting ${formatCurrency(metrics.annualCarbonLiabilityThb / MONTHS_PER_YEAR)} per month for the validator's base-power carbon liability.`;
+    }
+
+    function updateComparisonTable(metricsByTier, scenario) {
+        ["tier1", "tier2", "tier3"].forEach((tierKey) => {
+            const metrics = metricsByTier[tierKey];
+            setComparisonCell("Gross", tierKey, formatCurrency(metrics.annualGrossRevenueThb));
+            setComparisonCell("Fund", tierKey, formatCurrency(scenario.totalPoolCarbonRevenueThb), "caution");
+            setComparisonCell("Liability", tierKey, formatCurrency(metrics.annualCarbonLiabilityThb), metrics.annualCarbonLiabilityThb > 0 ? "caution" : null);
+            setComparisonCell("FirstYearCost", tierKey, formatCurrency(metrics.firstYearCostThb));
+            setComparisonCell("RecurringCost", tierKey, formatCurrency(metrics.recurringCostThb));
+            setComparisonCell("FirstYearNet", tierKey, formatCurrency(metrics.firstYearNetReturnThb), numericTone(metrics.firstYearNetReturnThb));
+            setComparisonCell("RecurringNet", tierKey, formatCurrency(metrics.recurringNetReturnThb), numericTone(metrics.recurringNetReturnThb));
+            setComparisonCell("RecurringRoi", tierKey, formatRoi(metrics.recurringRoiPct), metrics.recurringRoiPct === null ? null : numericTone(metrics.recurringRoiPct));
+        });
+
+        setText(dom.comparisonFootnote, `Network-wide Carbon Fund flow is ${formatCurrency(scenario.totalPoolCarbonRevenueThb)} per year at ${formatPercent(scenario.effectiveUsagePct)} gas used per block. This remains outside validator revenue for every tier.`);
+    }
+
+    function updateAssumptions(scenario) {
+        setText(dom.assumptionValidatorCount, `${formatInteger(scenario.validatorCount)} validators`);
+        setText(dom.assumptionBasePower, `${formatDecimal(basePowerPenaltyNxnPerValidatorYear(), 3)} NXN / validator-year`);
+        setText(dom.assumptionBasePowerNote, `Deducted from validator returns as ${formatCurrency(validatorCarbonLiabilityThb())} per validator-year at ${formatDecimal(THB_PER_NXN, 3)} THB / NXN.`);
+    }
+
+    function updateScenarioSummary(scenario) {
+        setText(dom.scenarioSummary, `${formatDecimal(scenario.blockTimeSeconds, 0)}s blocks • ${formatInteger(scenario.txnsPerMonth)} txns / month • ${formatInteger(scenario.validatorCount)} validators • ${formatPercent(scenario.effectiveUsagePct)} gas used per block`);
+    }
+
+    function collectInputs() {
+        return {
+            blockTimeSeconds: Math.max(1, readNumber(dom.blockTime, 5)),
+            txnsPerMonth: Math.max(0, readNumber(dom.txnsPerMonth, 0)),
+            validatorCount: Math.max(1, readNumber(dom.validatorCount, 16)),
+            selectedPackage: dom.selectedPackage.value,
+            operationFeeGwei: Math.max(0, readNumber(dom.operationFee, 100)),
+            tier1ManagedThb: Math.max(0, readNumber(dom.tier1ManagedThb, 0))
+        };
+    }
+
+    function txnsPerMonthForUsage(usagePct, blockTimeSeconds) {
+        const usage = calculateUsageProfile(blockTimeSeconds, 0);
+        return Math.round(usage.monthlyCapacityTxns * (usagePct / 100));
+    }
+
+    function calculateAndRender() {
+        const inputs = collectInputs();
+        const scenario = calculateScenario(inputs);
+        dom.scrPercent.value = formatDecimal(scenario.scrPercent, 6);
+        const metricsByTier = {
+            tier1: buildTierMetrics("tier1", scenario),
+            tier2: buildTierMetrics("tier2", scenario),
+            tier3: buildTierMetrics("tier3", scenario)
+        };
+        const selectedMetrics = metricsByTier[scenario.selectedPackage];
+
+        updateAssumptions(scenario);
+        updateScenarioSummary(scenario);
+        updateSummary(scenario, selectedMetrics);
+        updateVerdict(scenario, selectedMetrics);
+        updateTierCard("tier1", metricsByTier.tier1, scenario.selectedPackage);
+        updateTierCard("tier2", metricsByTier.tier2, scenario.selectedPackage);
+        updateTierCard("tier3", metricsByTier.tier3, scenario.selectedPackage);
+        updateComparisonTable(metricsByTier, scenario);
+    }
+
+    function applyPreset(event) {
+        const button = event.currentTarget;
+
+        if (button.dataset.operationFee) {
+            dom.operationFee.value = button.dataset.operationFee;
+        }
+
+        if (button.dataset.validatorCount) {
+            dom.validatorCount.value = button.dataset.validatorCount;
+        }
+
+        if (button.dataset.benchmarkUsage) {
+            const targetUsage = Number.parseFloat(button.dataset.benchmarkUsage);
+            const blockTimeSeconds = Math.max(1, readNumber(dom.blockTime, 5));
+            dom.txnsPerMonth.value = String(txnsPerMonthForUsage(targetUsage, blockTimeSeconds));
+        }
+
+        calculateAndRender();
+    }
+
+    function init() {
+        [dom.blockTime, dom.txnsPerMonth, dom.validatorCount, dom.selectedPackage, dom.operationFee, dom.tier1ManagedThb].forEach((element) => {
+            element.addEventListener("input", calculateAndRender);
+            element.addEventListener("change", calculateAndRender);
+        });
+
+        document.querySelectorAll(".preset-button").forEach((button) => {
+            button.addEventListener("click", applyPreset);
+        });
+
+        calculateAndRender();
+    }
+
+    init();
+</script>
+</body>
+</html>
